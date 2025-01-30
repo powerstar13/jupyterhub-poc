@@ -1,0 +1,28 @@
+# 이 파일은 JupyterHub Helm 차트의 기본 구성 값을 업데이트할 수 있습니다.
+#
+# 참고로 구성 참조 및 기본값을 확인하세요. 하지만 관심 있는 Helm 차트 버전을 참조하세요!
+#
+# Introduction to YAML:     https://www.youtube.com/watch?v=cdLNKUoMc6c
+# Chart config reference:   https://zero-to-jupyterhub.readthedocs.io/en/stable/resources/reference.html
+# Chart default values:     https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/HEAD/jupyterhub/values.yaml
+# Available chart versions: https://hub.jupyter.org/helm-chart/
+#
+# hub:
+#   config:
+#     JupyterHub:
+#       auth:
+#         authenticator_class: "oauthenticator.generic.GenericOAuthenticator"
+#         generic:
+#           client_id: "<YOUR_CLIENT_ID>"
+#           client_secret: "<YOUR_CLIENT_SECRET>"
+#           token_url: "https://<YOUR_KEYCLOAK_DOMAIN>/auth/realms/<YOUR_REALM>/protocol/openid-connect/token"
+#           userdata_url: "https://<YOUR_KEYCLOAK_DOMAIN>/auth/realms/<YOUR_REALM>/protocol/openid-connect/userinfo"
+#           username_key: "preferred_username"
+#           login_service: "Keycloak"
+#           oauth_callback_url: "https://<YOUR_JUPYTERHUB_DOMAIN>/hub/oauth_callback"
+#   extraEnv:
+#     OAUTH2_AUTHORIZE_URL: "https://<YOUR_KEYCLOAK_DOMAIN>/auth/realms/<YOUR_REALM>/protocol/openid-connect/auth"
+#     OAUTH2_TOKEN_URL: "https://<YOUR_KEYCLOAK_DOMAIN>/auth/realms/<YOUR_REALM>/protocol/openid-connect/token"
+#     OAUTH2_USERDATA_URL: "https://<YOUR_KEYCLOAK_DOMAIN>/auth/realms/<YOUR_REALM>/protocol/openid-connect/userinfo"
+#     OAUTH2_CLIENT_ID: "<YOUR_CLIENT_ID>"
+#     OAUTH2_CLIENT_SECRET: "<YOUR_CLIENT_SECRET>"
