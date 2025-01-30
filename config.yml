@@ -23,14 +23,9 @@ hub:
       token_url: http://localhost:30000/realms/jhipster/protocol/openid-connect/token
       userdata_url: http://localhost:30000/realms/jhipster/protocol/openid-connect/userinfo
       login_service: keycloak
-      username_claim: username
+      username_claim: preferred_username
       userdata_params:
         state: state
-      scope:
-        - openid
-        - profile
-        - email
-        - offline_access
       allow_all: true
       admin_users:
         - admin
