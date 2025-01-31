@@ -39,6 +39,27 @@ hub:
       allow_named_servers: true
       default_url: "/hub/home"
 
+singleuser:
+  image:
+    name: quay.io/jupyterhub/k8s-singleuser-sample
+    tag: 4.1.0
+  profileList:
+    - display_name: "JupyterLab-4.1.0"
+      description: "기본 이미지"
+      default: true
+    - display_name: "JupyterLab-4.0.0"
+      description: "첫 번째 이미지"
+      kubespawner_override:
+        image: quay.io/jupyterhub/k8s-singleuser-sample:4.0.0
+    - display_name: "JupyterLab-3.3.8"
+      description: "두 번째 이미지"
+      kubespawner_override:
+        image: quay.io/jupyterhub/k8s-singleuser-sample:3.3.8
+    - display_name: "JupyterLab-3.3.7"
+      description: "세 번째 이미지"
+      kubespawner_override:
+        image: quay.io/jupyterhub/k8s-singleuser-sample:3.3.7
+
 proxy:
   service:
     type: NodePort
