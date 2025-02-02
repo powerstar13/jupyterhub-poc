@@ -7,6 +7,8 @@ const keycloak = new Keycloak({
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOMContentLoaded event triggered");
+
     const authButton = document.getElementById('auth-btn');
     if (!authButton) {
         console.error("Auth button not found!");
@@ -17,9 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
     keycloak.init({ onLoad: 'check-sso', checkLoginIframe: false })
         .then(authenticated => {
             if (authenticated) {
+                console.log("User is authenticated.");
                 document.cookie = `token=${keycloak.token}`;
                 updateUIForAuthenticatedUser();
             } else {
+                console.log("User is not authenticated.");
                 authButton.textContent = 'Login with Keycloak';
                 authButton.addEventListener('click', () => {
                     keycloak.login();
@@ -36,11 +40,15 @@ function updateUIForAuthenticatedUser() {
     authButton.textContent = 'Logout';
     authButton.addEventListener('click', () => {
         keycloak.logout();
-        deleteCookie('token');
+        deleteCookie('token'); // 로그아웃 시 쿠키 삭제
     });
 
     const token = getCookie('token');
     fetchUserJupyterLab(token);
+}
+
+function deleteCookie(name) {
+    document.cookie = name + '=; Max-Age=0; path=/';
 }
 
 function fetchUserJupyterLab(token) {
@@ -51,9 +59,10 @@ function fetchUserJupyterLab(token) {
     })
     .then(response => response.json())
     .then(user => {
+        console.log('Logged in user:', user);
         displayUserInfo(user);
         if (user.preferred_username) {
-            fetchCurrentUserJupyterHub(user.preferred_username, token)
+            fetchCurrentUserJupyterHub(token)
                 .then(() => {
                     fetchUserJupyterLabs(user.preferred_username, token);
                 })
@@ -67,59 +76,78 @@ function fetchUserJupyterLab(token) {
     .catch(error => console.error('Error fetching user info:', error));
 }
 
-function fetchCurrentUserJupyterHub(username, token) {
-    return fetch(`http://192.168.35.203:8000/hub/api/users/${username}`, {
+function fetchCurrentUserJupyterHub(token) {
+    return fetch('http://192.168.35.203:30002/hub/api/user', {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
         console.log('Current JupyterHub user info:', data);
-    })
-    .catch(error => {
-        console.error('Error fetching current JupyterHub user info:', error);
+        displayJupyterHubUserInfo(data);
     });
 }
 
 function fetchUserJupyterLabs(username, token) {
-    fetch(`http://192.168.35.203:8000/user/${username}/api/sessions`, {
+    fetch(`http://192.168.35.203:30002/hub/api/users/${username}`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     })
-    .then(response => response.json())
-    .then(sessions => {
-        displayJupyterLabs(sessions);
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        }
+        return response.json();
     })
-    .catch(error => {
-        console.error('Error fetching JupyterLab sessions:', error);
-    });
+    .then(data => {
+        console.log('Fetched JupyterLab info for user:', data);
+        renderJupyterLabList(data);
+    })
+    .catch(error => console.error('Error fetching JupyterLab info:', error));
 }
 
 function displayUserInfo(user) {
     const userInfoDiv = document.getElementById('user-info');
-    userInfoDiv.innerHTML = `<p>Welcome, ${user.name} (${user.email})</p>`;
+    userInfoDiv.innerHTML = `
+        <p>Name: ${user.name}</p>
+        <p>Username: ${user.preferred_username}</p>
+        <p>Email: ${user.email}</p>
+    `;
 }
 
-function displayJupyterLabs(sessions) {
+function displayJupyterHubUserInfo(data) {
+    const userInfoDiv = document.getElementById('user-info');
+    userInfoDiv.innerHTML += `
+        <p>JupyterHub Admin: ${data.admin}</p>
+    `;
+}
+
+function renderJupyterLabList(userData) {
     const container = document.getElementById('container');
-    container.innerHTML = '<h2>JupyterLab Sessions</h2>';
-    const list = document.createElement('ul');
-    sessions.forEach(session => {
-        const listItem = document.createElement('li');
-        listItem.textContent = `Session: ${session.name}`;
-        list.appendChild(listItem);
+    container.innerHTML = '';
+
+    if (!userData || !userData.server) {
+        container.innerHTML = 'No JupyterLab instances found.';
+        return;
+    }
+
+    const btn = document.createElement('button');
+    btn.textContent = `Open JupyterLab - ${userData.server.name}`;
+    btn.addEventListener('click', () => {
+        window.open(`http://192.168.35.203:30002/user/${userData.server.name}/lab`, '_blank');
     });
-    container.appendChild(list);
+    container.appendChild(btn);
 }
 
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
-}
-
-function deleteCookie(name) {
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 }
