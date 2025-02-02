@@ -1,7 +1,7 @@
 import Keycloak from 'keycloak-js';
 
 const keycloak = new Keycloak({
-    url: 'http://192.168.35.203:30000',
+    url: 'http://192.168.64.1:30000',
     realm: 'jhipster',
     clientId: 'web'
 });
@@ -54,10 +54,10 @@ function updateUIForAuthenticatedUser() {
     getUserServers(userInfo.preferred_username);
 }
 
-const jupyterHubAPItoken = 'c0563f61cf97438a95b0148306a3d07c';
+const jupyterHubAPItoken = '7c7221f1293444a480ac2c7e6da3ffb4';
 
 async function getUserServers(username) {
-    const response = await fetch(`http://192.168.35.203:30002/hub/api/users/${username}?include_stopped_servers=true`, {
+    const response = await fetch(`http://192.168.64.1:30002/hub/api/users/${username}?include_stopped_servers=true`, {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${jupyterHubAPItoken}`,
@@ -89,7 +89,7 @@ function displayServers(servers) {
         row.querySelector('.server-last-activity').textContent = serverInfo.last_activity || 'N/A';
         row.querySelector('.server-started').textContent = serverInfo.started || 'N/A';
         const urlCell = row.querySelector('.server-url a');
-        urlCell.href = `http://192.168.35.203:30002${serverInfo.url}`;
+        urlCell.href = `http://192.168.64.1:30002${serverInfo.url}`;
         urlCell.textContent = serverInfo.url;
         row.querySelector('.server-profile').textContent = (serverInfo.user_options && serverInfo.user_options.profile) || 'N/A';
         row.querySelector('.server-status').textContent = status;
