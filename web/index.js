@@ -7,8 +7,6 @@ const keycloak = new Keycloak({
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOMContentLoaded event triggered");
-
     const authButton = document.getElementById('auth-btn');
     if (!authButton) {
         console.error("Auth button not found!");
@@ -20,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(authenticated => {
             if (authenticated) {
                 console.log("User is authenticated.");
+                console.log("keycloak info:", keycloak);
                 document.cookie = `token=${keycloak.token}`;
                 updateUIForAuthenticatedUser();
             } else {
@@ -40,7 +39,7 @@ function updateUIForAuthenticatedUser() {
     authButton.textContent = 'Logout';
     authButton.addEventListener('click', () => {
         keycloak.logout();
-        deleteCookie('token'); // 로그아웃 시 쿠키 삭제
+        deleteCookie('token');
     });
 
     const token = getCookie('token');
@@ -62,12 +61,18 @@ function fetchUserJupyterLab(token) {
         console.log('Logged in user:', user);
         displayUserInfo(user);
         if (user.preferred_username) {
-            fetchCurrentUserJupyterHub(token)
-                .then(() => {
-                    fetchUserJupyterLabs(user.preferred_username, token);
+            fetchJupyterHubApiToken(token)
+                .then(apiToken => {
+                    fetchCurrentUserJupyterHub(apiToken)
+                        .then(() => {
+                            fetchUserJupyterLabs(user.preferred_username, apiToken);
+                        })
+                        .catch(error => {
+                            console.error('Error fetching current JupyterHub user info:', error);
+                        });
                 })
                 .catch(error => {
-                    console.error('Error fetching current JupyterHub user info:', error);
+                    console.error('Error fetching JupyterHub API token:', error);
                 });
         } else {
             console.error('No preferred_username found');
@@ -76,10 +81,32 @@ function fetchUserJupyterLab(token) {
     .catch(error => console.error('Error fetching user info:', error));
 }
 
-function fetchCurrentUserJupyterHub(token) {
+function fetchJupyterHubApiToken(token) {
+    return fetch('http://192.168.35.203:30002/hub/api/authorizations/token', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            note: 'API token for accessing JupyterHub',
+            expires_in: 3600, // 1 hour
+            scopes: ['inherit']
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => data.token);
+}
+
+function fetchCurrentUserJupyterHub(apiToken) {
     return fetch('http://192.168.35.203:30002/hub/api/user', {
         headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${apiToken}`
         }
     })
     .then(response => {
@@ -94,10 +121,10 @@ function fetchCurrentUserJupyterHub(token) {
     });
 }
 
-function fetchUserJupyterLabs(username, token) {
+function fetchUserJupyterLabs(username, apiToken) {
     fetch(`http://192.168.35.203:30002/hub/api/users/${username}`, {
         headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${apiToken}`
         }
     })
     .then(response => {
