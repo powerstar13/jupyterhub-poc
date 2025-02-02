@@ -42,11 +42,59 @@ function updateUIForAuthenticatedUser() {
 
     // 사용자 정보 가져오기
     const userInfo = keycloak.tokenParsed;
-    const userInfoDiv = document.createElement('div');
-    userInfoDiv.id = 'user-info';
-    userInfoDiv.innerHTML = `
-        <p><strong>Username:</strong> ${userInfo.preferred_username}</p>
-        <p><strong>Email:</strong> ${userInfo.email}</p>
-    `;
-    document.body.appendChild(userInfoDiv);
+    const userInfoDiv = document.getElementById('user-info');
+    const usernameSpan = document.getElementById('username');
+    const emailSpan = document.getElementById('email');
+
+    usernameSpan.textContent = userInfo.preferred_username;
+    emailSpan.textContent = userInfo.email;
+    userInfoDiv.style.display = 'block';
+
+    // JupyterHub 서버 목록 가져오기
+    getUserServers(userInfo.preferred_username);
+}
+
+const jupyterHubAPItoken = 'c0563f61cf97438a95b0148306a3d07c';
+
+async function getUserServers(username) {
+    const response = await fetch(`http://192.168.35.203:30002/hub/api/users/${username}?include_stopped_servers=true`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${jupyterHubAPItoken}`,
+            'Content-Type': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        console.error("Failed to fetch JupyterHub servers:", response.statusText);
+        return;
+    }
+
+    const userData = await response.json();
+    displayServers(userData.servers);
+}
+
+function displayServers(servers) {
+    const serversDiv = document.getElementById('servers');
+    const tbody = document.getElementById('servers-tbody');
+    const templateRow = document.getElementById('server-row-template');
+    tbody.innerHTML = ''; // Clear existing rows
+
+    for (const [serverName, serverInfo] of Object.entries(servers)) {
+        const status = serverInfo.ready ? (serverInfo.stopped ? 'Stopped' : 'Running') : (serverInfo.pending || 'Pending');
+        const row = templateRow.cloneNode(true);
+        row.style.display = '';
+        row.querySelector('.server-name').textContent = serverInfo.name || '기본';
+        row.querySelector('.server-full-name').textContent = serverInfo.full_name;
+        row.querySelector('.server-last-activity').textContent = serverInfo.last_activity || 'N/A';
+        row.querySelector('.server-started').textContent = serverInfo.started || 'N/A';
+        const urlCell = row.querySelector('.server-url a');
+        urlCell.href = `http://192.168.35.203:30002${serverInfo.url}`;
+        urlCell.textContent = serverInfo.url;
+        row.querySelector('.server-profile').textContent = (serverInfo.user_options && serverInfo.user_options.profile) || 'N/A';
+        row.querySelector('.server-status').textContent = status;
+        tbody.appendChild(row);
+    }
+
+    serversDiv.style.display = 'block';
 }

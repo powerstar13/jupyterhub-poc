@@ -3,12 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keycloak + JupyterHub</title>
+    <title>JupyterHub Servers</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
-    <button id="auth-btn">Login with Keycloak</button>
-    <div id="user-info"></div>
-    <div id="container"></div>
+    <button id="auth-btn">Authenticate</button>
+    <div id="user-info" style="display: none;">
+        <p><strong>Username:</strong> <span id="username"></span></p>
+        <p><strong>Email:</strong> <span id="email"></span></p>
+    </div>
+    <div id="servers" style="display: none;">
+        <h3>Jupyter Servers</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Full Name</th>
+                    <th>Last Activity</th>
+                    <th>Started</th>
+                    <th>URL</th>
+                    <th>Profile</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="servers-tbody">
+                <tr id="server-row-template" style="display: none;">
+                    <td class="server-name"></td>
+                    <td class="server-full-name"></td>
+                    <td class="server-last-activity"></td>
+                    <td class="server-started"></td>
+                    <td class="server-url"><a href="" target="_blank"></a></td>
+                    <td class="server-profile"></td>
+                    <td class="server-status"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
     <script type="module" src="./index.js"></script>
 </body>
 </html>
