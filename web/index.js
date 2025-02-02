@@ -47,7 +47,6 @@ function updateUIForAuthenticatedUser() {
     userInfoDiv.innerHTML = `
         <p><strong>Username:</strong> ${userInfo.preferred_username}</p>
         <p><strong>Email:</strong> ${userInfo.email}</p>
-        <p><strong>Full Name:</strong> ${userInfo.name}</p>
     `;
     document.body.appendChild(userInfoDiv);
 }
