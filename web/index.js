@@ -71,10 +71,10 @@ async function getUserServers(username) {
     }
 
     const userData = await response.json();
-    displayServers(userData.servers);
+    displayServers(userData.servers, username);
 }
 
-function displayServers(servers) {
+function displayServers(servers, username) {
     const serversDiv = document.getElementById('servers');
     const tbody = document.getElementById('servers-tbody');
     const templateRow = document.getElementById('server-row-template');
@@ -91,10 +91,139 @@ function displayServers(servers) {
         const urlCell = row.querySelector('.server-url a');
         urlCell.href = `http://192.168.64.1:30002${serverInfo.url}`;
         urlCell.textContent = serverInfo.url;
+        if (status !== 'Running') {
+            urlCell.style.pointerEvents = 'none';
+            urlCell.style.color = 'gray';
+        } else {
+            urlCell.style.pointerEvents = 'auto';
+            urlCell.style.color = 'blue';
+        }
         row.querySelector('.server-profile').textContent = (serverInfo.user_options && serverInfo.user_options.profile) || 'N/A';
         row.querySelector('.server-status').textContent = status;
+
+        const actionsCell = row.querySelector('.server-actions');
+        actionsCell.innerHTML = ''; // Clear existing actions
+
+        if (status === 'Running') {
+            const stopButton = document.createElement('button');
+            stopButton.textContent = 'Stop';
+            stopButton.addEventListener('click', () => stopServer(username, serverName));
+            actionsCell.appendChild(stopButton);
+        } else {
+            const startButton = document.createElement('button');
+            startButton.textContent = 'Start';
+            startButton.addEventListener('click', () => startServer(username, serverName));
+            actionsCell.appendChild(startButton);
+
+            if (serverName !== "") {
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.addEventListener('click', () => deleteServer(username, serverName));
+                actionsCell.appendChild(deleteButton);
+            } else {
+                row.addEventListener('mouseenter', (event) => {
+                    const tooltip = document.createElement('div');
+                    tooltip.textContent = '기본 서버는 삭제할 수 없습니다.';
+                    tooltip.style.position = 'fixed';
+                    tooltip.style.backgroundColor = 'yellow';
+                    tooltip.style.border = '1px solid black';
+                    tooltip.style.padding = '5px';
+                    tooltip.style.zIndex = '1000';
+                    tooltip.style.left = `${event.clientX + 10}px`;
+                    tooltip.style.top = `${event.clientY + 10}px`;
+                    document.body.appendChild(tooltip);
+                    row.tooltip = tooltip;
+                });
+
+                row.addEventListener('mousemove', (event) => {
+                    if (row.tooltip) {
+                        row.tooltip.style.left = `${event.clientX + 10}px`;
+                        row.tooltip.style.top = `${event.clientY + 10}px`;
+                    }
+                });
+
+                row.addEventListener('mouseleave', () => {
+                    if (row.tooltip) {
+                        document.body.removeChild(row.tooltip);
+                        row.tooltip = null;
+                    }
+                });
+            }
+        }
+
         tbody.appendChild(row);
     }
 
     serversDiv.style.display = 'block';
+}
+
+function showLoadingIcon() {
+    const loadingIcon = document.getElementById('loading-icon');
+    loadingIcon.style.display = 'block';
+}
+
+function hideLoadingIcon() {
+    const loadingIcon = document.getElementById('loading-icon');
+    loadingIcon.style.display = 'none';
+}
+
+async function startServer(username, serverName) {
+    showLoadingIcon();
+    const response = await fetch(`http://192.168.64.1:30002/hub/api/users/${username}/servers/${serverName}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${jupyterHubAPItoken}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    hideLoadingIcon();
+
+    if (!response.ok) {
+        console.error("Failed to start server:", response.statusText);
+        return;
+    }
+
+    // 서버 목록을 다시 가져와서 업데이트
+    getUserServers(username);
+}
+
+async function stopServer(username, serverName) {
+    showLoadingIcon();
+    const response = await fetch(`http://192.168.64.1:30002/hub/api/users/${username}/servers/${serverName}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${jupyterHubAPItoken}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    hideLoadingIcon();
+
+    if (!response.ok) {
+        console.error("Failed to stop server:", response.statusText);
+        return;
+    }
+
+    // 서버 목록을 다시 가져와서 업데이트
+    getUserServers(username);
+}
+
+async function deleteServer(username, serverName) {
+    showLoadingIcon();
+    const response = await fetch(`http://192.168.64.1:30002/hub/api/users/${username}/servers/${serverName}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${jupyterHubAPItoken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ remove: true })
+    });
+    hideLoadingIcon();
+
+    if (!response.ok) {
+        console.error("Failed to delete server:", response.statusText);
+        return;
+    }
+
+    // 서버 목록을 다시 가져와서 업데이트
+    getUserServers(username);
 }

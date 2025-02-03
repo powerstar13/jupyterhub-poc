@@ -16,6 +16,14 @@
         th {
             background-color: #f2f2f2;
         }
+        #loading-icon {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+        }
     </style>
 </head>
 <body>
@@ -36,6 +44,7 @@
                     <th>URL</th>
                     <th>Profile</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="servers-tbody">
@@ -47,10 +56,12 @@
                     <td class="server-url"><a href="" target="_blank"></a></td>
                     <td class="server-profile"></td>
                     <td class="server-status"></td>
+                    <td class="server-actions"></td>
                 </tr>
             </tbody>
         </table>
     </div>
+    <div id="loading-icon">⏳ Loading...</div>
     <script type="module" src="./index.js"></script>
 </body>
 </html>
